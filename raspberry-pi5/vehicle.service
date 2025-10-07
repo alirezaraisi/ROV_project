@@ -1,0 +1,20 @@
+[Unit]
+Description=ROV Service
+After=multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/work
+ExecStart=/home/user/work/venv/bin/python /home/user/work/main.py
+User=user
+
+# Always restart
+Restart=always
+
+# Slow python give em 2 seconds before restart
+RestartSec=2 
+StartLimitIntervalSec=0
+
+[Install]
+# system wide service
+WantedBy=multi-user.target

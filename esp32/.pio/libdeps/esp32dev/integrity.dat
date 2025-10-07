@@ -1,0 +1,4 @@
+adafruit/Adafruit ADS1X15@^2.6.0
+adafruit/Adafruit BMP280 Library@^2.6.8
+bluerobotics/BlueRobotics MS5837 Library@^1.1.1
+madhephaestus/ESP32Servo@^3.0.8
