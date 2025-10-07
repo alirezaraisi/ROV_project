@@ -84,7 +84,8 @@ async def manual_control_handler(msg: mavlink.MAVLink_manual_control_message):
 **Project ROV** گامی به‌سوی رباتیک زیرآبی هوشمند و واکنش‌پذیر است.
 
 ---
-##نمای ظاهری پروژه
+## دموی پروژه را می توانید از لینک زیر تماشا کنید
+https://drive.google.com/drive/folders/1h5RaRMok-oDprnud1FtFUqWAuBtHD1Ev?usp=sharing
 
 ![electronic diagram](/image_gif/Hamoor.jpg)
 ---
