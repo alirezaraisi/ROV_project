@@ -243,12 +243,12 @@ def start():
     global latest_joystick, mode, button
     global esp_depth,esp_battery ,change_pitch_depth
     global error_atuo
-    
+    global roll1, pitch1, yaw1
     imusensor = None
     prev_joystick = None
-    #pid_yaw = pid.PIDController(Kp=0.1, Ki=0.005, Kd=0.2)
-    #pid_pitch = pid.PIDController(Kp=1.0, Ki=0.0, Kd=0.00)
+    pid_yaw = pid.PIDController(Kp=0.1, Ki=0.005, Kd=0.2)
     pid_depth = pid.PIDController(Kp=0.8, Ki=0.000, Kd=0.0)
+    #pid_pitch = pid.PIDController(Kp=1.0, Ki=0.0, Kd=0.00)
     roll1, pitch1, yaw1 = 0,0,0
     zarib = 0.017  #3.141592 / 180.0
     send_corr_yaw1, send_corr_yaw2, send_corr_pitch1, send_corr_pitch2 = 0,0,0,0
@@ -284,11 +284,7 @@ def start():
                 error_atuo = 1.0
                 roll1, pitch1, yaw1 = 0.0, 0.0, 0.0
             if mode == "MANUAL":
-                #print(f"latest_joystick:{latest_joystick}")
-                #print(f"mode:{mode}")
-                #print(f"button: {button}")
-                if (latest_joystick != prev_joystick):
-                    #joystick_to_send = latest_joystick[:12] + latest_joystick[13]
+                if (latest_joystick != prev_joystick):          
                     if communication.send_command(latest_joystick):
                         logger.info(f"Sent latest_joystick to serial: {latest_joystick}")
                         prev_joystick = latest_joystick  # ????????? ???? ??????? ?? ?????
@@ -298,35 +294,24 @@ def start():
             elif mode == "AUTO":
                 
                 try:
-                    #print(f"button-----------{button}-----------------------------------------")
+                   
                     error_atuo = 0.0
                     direction = latest_joystick[0]
                     direction_pitch = latest_joystick[7]
                     correction_direction = direction_pitch
-                    # اصلاح شرط برای پوشش تمام جهات
-                    #base_left = int(latest_joystick[1:3])
-                    #base_right = int(latest_joystick[5:7])
-                    #
-                    #button = latest_joystick[12]
-                    #correction_yaw = pid_yaw.pid_yaw(direction, button, yaw1)
-                    '''if direction in ["2", "8","5"]:  # فقط برای عقب و جلو
-                        
+                   
+                    base_left = int(latest_joystick[1:3])
+                    base_right = int(latest_joystick[5:7])
+
+                    correction_yaw = pid_yaw.pid_yaw(direction, button, yaw1)
+                    if direction in ["2", "8","5"]:                         
                         send_corr_yaw1 = max(0, min(99, base_left - correction_yaw))
                         send_corr_yaw2 = max(0, min(99, base_right + correction_yaw))
-                    else:
-                        # برای سایر جهت‌ها PID غیرفعال - ارسال مقادیر اصلی
+                    else:                        
                         send_corr_yaw1 = base_left
                         send_corr_yaw2 = base_right
-                    '''    
-                    '''if(button=='6' or button=='7' or button =='2' or direction_pitch == '2' or direction_pitch == '8'):
-                        change_pitch_depth = "pitch"  
-                    elif (button == '4'):
-                        change_pitch_depth = "depth"'''
+                       
 
-                    '''if(button=='6' or button=='7' or button =='2' or direction_pitch == '2' or direction_pitch == '8'):
-                        change_pitch_depth = "pitch"  
-                    elif (button == '4'):
-                        change_pitch_depth = "depth"'''
                     if button == '4':
                         change_pitch_depth = "depth"
                     elif button in ['6', '7', '2'] or direction_pitch in ['2', '8']:
@@ -342,58 +327,43 @@ def start():
                     
                     elif(change_pitch_depth == "depth"):                
                         correction_power, correction_direction = pid_depth.pid_depth(button, esp_depth)
-                        
-                        # هم جهت و هم power را تنظیم کن
                         send_corr_pitch1 = correction_power
                         send_corr_pitch2 = correction_power
-                        # رشته نهایی را با جهت جدید بساز
                         
-                    send_esp = f"{latest_joystick[0:7]}{correction_direction}{send_corr_pitch1:02d}{send_corr_pitch2:02d}{latest_joystick[12]}"
-                    #send_esp = f"{latest_joystick[0]}{send_corr_yaw1:02d}{latest_joystick[3:5]}{send_corr_yaw2:02d}{latest_joystick[7]}{send_corr_pitch1:02d}{send_corr_pitch2:02d}{latest_joystick[12]}"
-                    #print(f"latest_joystick:{latest_joystick}")
-                    #print(f"mode:{mode}")
-                    #print(f"button: {button}")
-                    print(f"change_pitch_depth{change_pitch_depth}")
+                    #send_esp = f"{latest_joystick[0:7]}{correction_direction}{send_corr_pitch1:02d}{send_corr_pitch2:02d}{latest_joystick[12]}"
+                    send_esp = f"{latest_joystick[0]}{send_corr_yaw1:02d}{latest_joystick[3:5]}{send_corr_yaw2:02d}{latest_joystick[7]}{send_corr_pitch1:02d}{send_corr_pitch2:02d}{latest_joystick[12]}"
+
                     if communication.send_command(send_esp):
                         logger.info(f"Sent latest_joystick to serial: {send_esp}")
-                        prev_joystick = latest_joystick  # ????????? ???? ??????? ?? ?????
+                        prev_joystick = latest_joystick  
                     else:
                         logger.warning(f"Failed to send latest_joystick: {send_esp}")
 
                 except OSError as e:
                     error_atuo = 1.0
-                    #joystick_to_send = latest_joystick[:12] + latest_joystick[13]
                     if communication.send_command(latest_joystick):
                         logger.info(f" error not imu Sent latest_joystick to serial : {latest_joystick}")
                     else:
                         logger.warning(f"error not imuFailed to send latest_joystick: {latest_joystick}")
 
             time.sleep(0.05)
-            #update_telemetry()
-            #state = get_current_state()
-            # ?????? ???? ?? ????? (ESP)
             response = communication.read_line()  
             if response is not None:
                 #logger.info(f"Received from ESP: {response}") 
                 #print(f"ESP Response: {response}")   
                 
-                # تجزیه همه خطوط
                 for line in response.split('\n'):
-                    line = line.strip()  # حذف فاصله‌های اضافی
+                    line = line.strip()
                     if ':' in line:
                         try:
-                            # تقسیم فقط روی اولین علامت ":"
                             key, value = line.split(':', 1)
-                            key = key.strip().lower()  # یکسان‌سازی کلید
+                            key = key.strip().lower() 
                             value = value.strip()
                             
                             if key == 'depth':
                                 esp_depth = float(value)
                             elif key == 'battery':
                                 esp_battery = int(value)
-                                # ذخیره در متغیر باتری اگر دارید
-                            
-                            #print(f"esp_depth:{esp_depth}   esp_battery:{esp_battery}")
                         except ValueError as e:
                             logger.error(f"Error parsing value in line: {line} - Error: {e}")
                         
